@@ -25,22 +25,6 @@ function App() {
     setFiles({ ...files, [e.target.name]: e.target.files[0] });
   };
 
-  // Professional message formatter
-  const formatError = (msg) => {
-    if (msg.includes("Aadhaar")) return "Aadhaar number does not match";
-    if (msg.includes("PAN")) return "PAN number does not match";
-    if (msg.includes("Name")) return "Name does not match document";
-    if (msg.includes("not found")) return "Required data not found in document";
-    return msg;
-  };
-
-  const formatSuccess = (msg) => {
-    if (msg.includes("Aadhaar")) return "Aadhaar matched";
-    if (msg.includes("PAN")) return "PAN matched";
-    if (msg.includes("Name")) return "Name matched";
-    return msg;
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -56,63 +40,72 @@ function App() {
 
     try {
       const res = await axios.post(
-        `${process.env.REACT_APP_API_URL}/api/validate`,
+        `${import.meta.env.VITE_API_URL}/api/validate`,
         data
       );
       setResult(res.data);
-    } catch (err) {
-      alert("Request failed. Please check inputs or server.");
+    } catch {
+      alert("API Error");
     }
 
     setLoading(false);
   };
 
   return (
-    <div className="container">
+    <div className="page">
       <div className="card">
-        <h2>Identity Verification</h2>
+        <h1>Identity Verification</h1>
 
         <form onSubmit={handleSubmit}>
           <input name="name" placeholder="Full Name" onChange={handleChange} />
           <input name="aadhaar" placeholder="Aadhaar Number" onChange={handleChange} />
           <input name="pan" placeholder="PAN Number" onChange={handleChange} />
 
-          <input type="file" name="aadhaar" onChange={handleFile} />
-          <input type="file" name="pan" onChange={handleFile} />
+          <div className="upload-section">
+            <label className="upload-box">
+              <p>Aadhaar Document</p>
+              <span>{files.aadhaar ? files.aadhaar.name : "Upload PDF/Image"}</span>
+              <input type="file" name="aadhaar" onChange={handleFile} />
+            </label>
 
-          <button disabled={loading}>
-            {loading ? "Checking..." : "Verify"}
-          </button>
+            <label className="upload-box pan">
+              <p>PAN Document</p>
+              <span>{files.pan ? files.pan.name : "Upload PDF/Image"}</span>
+              <input type="file" name="pan" onChange={handleFile} />
+            </label>
+          </div>
+
+          <button>{loading ? "Verifying..." : "Verify Identity"}</button>
         </form>
 
+        {/* 🔥 RESULT UI */}
         {result && (
-          <div className={`result ${result.status}`}>
-            <h3>
-              Verification Result:{" "}
-              {result.status === "success" ? "Successful" : "Failed"}
-            </h3>
+          <div className="result-container">
 
+            {/* ❌ ISSUES */}
             {result.errors.length > 0 && (
-              <>
-                <h4>Issues</h4>
-                <ul className="error">
+              <div className="result-box failed">
+                <h3>Verification Issues</h3>
+                <ul>
                   {result.errors.map((e, i) => (
-                    <li key={i}>{formatError(e)}</li>
+                    <li key={i}>{e}</li>
                   ))}
                 </ul>
-              </>
+              </div>
             )}
 
+            {/* ✅ VERIFIED */}
             {result.success.length > 0 && (
-              <>
-                <h4>Verified</h4>
-                <ul className="success">
+              <div className="result-box success">
+                <h3>Verified</h3>
+                <ul>
                   {result.success.map((s, i) => (
-                    <li key={i}>{formatSuccess(s)}</li>
+                    <li key={i}>{s}</li>
                   ))}
                 </ul>
-              </>
+              </div>
             )}
+
           </div>
         )}
       </div>
